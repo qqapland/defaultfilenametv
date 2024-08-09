@@ -1,0 +1,46 @@
+name: Upload & Deploy
+on:
+  push:
+    branches:
+      - master
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    concurrency: upload-deploy-group
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx # Use docker build caching with github cache 10gb
+        uses: docker/setup-buildx-action@v1
+      - run: docker build -t defaultfilenametv -f Dockerfile .
+      - run: docker save -o defaultfilenametv.tar defaultfilenametv
+
+      - name: rsync container to server
+        uses: burnett01/rsync-deployments@7.0.1 # takeout the shell script and use it directly?
+        # and script needs hostname authentication as well.
+        with:
+          switches: -avzr --delete
+          path: defaultfilenametv.tar
+          remote_path: /home/a
+          remote_host: ${{ secrets.SERVER_IP }}
+          remote_user: a
+          remote_key: ${{ secrets.SERVER_RSA_PRIV_KEY }}
+
+      - name: rsync script to server
+        uses: burnett01/rsync-deployments@7.0.1 # takeout the shell script and use it directly?
+        # and script needs hostname authentication as well.
+        with:
+          switches: -avzr --delete
+          path: deploydefaulttv.sh
+          remote_path: /home/a
+          remote_host: ${{ secrets.SERVER_IP }}
+          remote_user: a
+          remote_key: ${{ secrets.SERVER_RSA_PRIV_KEY }}
+
+      - name: docker load and run
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: a
+          key: ${{ secrets.SERVER_RSA_PRIV_KEY }}
+          script: /home/a/deploydefaulttv.sh
