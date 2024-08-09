@@ -26,6 +26,9 @@ jobs:
           remote_user: a
           remote_key: ${{ secrets.SERVER_RSA_PRIV_KEY }}
 
+      - name: add secret to script
+        run:  echo 'YT_API_KEY=${{ secrets.YT_API_KEY }}' | cat - deploydefaulttv.sh  > temp && mv temp deploydefaulttv.sh
+
       - name: rsync script to server
         uses: burnett01/rsync-deployments@7.0.1 # takeout the shell script and use it directly?
         # and script needs hostname authentication as well.

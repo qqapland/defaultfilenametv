@@ -1,18 +1,3 @@
-# # The build stage
-# FROM golang:1.16-buster as builder
-# WORKDIR /app
-# COPY . .
-# RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o go-api main.go
-
-# # The run stage
-# FROM scratch
-# WORKDIR /app
-# COPY --from=builder /app/go-api .
-# EXPOSE 3000
-# CMD ["./go-api"]
-
-
-
 FROM golang:1.18-bullseye as base
 
 RUN adduser \
@@ -45,6 +30,3 @@ COPY --from=base /main .
 USER small-user:small-user
 
 CMD ["./main"]
-
-# docker build -t i_go_basic_build_scratch -f Dockerfile_basic_build_scratch .
-# docker run -it --rm -p 3004:3000 --name=go-api i_go_basic_build_scratch
