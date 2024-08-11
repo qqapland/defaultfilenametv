@@ -20,10 +20,27 @@
   width: 70vw;
   height: 40vw;
   }
+
+  li {
+    background-color: darkslategrey;
+    list-style-type: none;
+    margin: 4px;
+    border-radius: 12px;
+}
+
+img {
+    border: solid 2px white;
+    border-radius: 12px;
+}
+
+#video-history::-webkit-scrollbar {
+  display: none;
+}
+
 </style>
 <body bgcolor="black">
     <div style="display: flex; flex-direction: row;">
-        <div id="video-history" style="width: 20%; height: 80vh; padding: 10px; border: 1px solid #ccc; display: none; overflow: scroll;"></div>
+        <div id="video-history" style="width: 20%; height: 80vh; padding: 10px; border: 1px solid #ccc; border-radius: 12px; display: none; overflow: scroll;"></div>
         <div style="width: 100%;">
             <center>
                 <font face="courier" color="white" size="2">
@@ -34,9 +51,9 @@
                 <!-- <div id="videoInfo">loading...</div><br> -->
                 <div id="projectInfo"><i>default filename tv </i> finds and plays youtube videos that were uploaded from the camera without edits to the filename.</div><br>
                 <div id="error-text"></div><br>
-                <button type="button" onClick="lastVideo()">← previous video</button> 
+                <button type="button" oncontextmenu="toggleVideoHistory(); return false;" onClick="lastVideo()">← previous video</button> 
                 <button type="button" onClick="nextVideo()">next video →</button> 
-                <button class="collapse-btn" onclick="toggleVideoHistory()">history</button>
+                <!-- <button class="collapse-btn" onclick="toggleVideoHistory()">history</button> -->
             </center>
         </div>
     </div>
@@ -59,6 +76,20 @@
     let currentVideoIndex = -1;
     let playbackErrorCount = 0;
 
+    // Load video history from local storage
+    const storedVideoHistory = JSON.parse(localStorage.getItem('videoHistory')) || [];
+    videoHistory = storedVideoHistory.map(video => {
+        if (typeof video === 'string') {
+            return {videoId: video, isHearted: false};
+        } else {
+            return video;
+        }
+    });
+    currentVideoIndex = videoHistory.length - 1;
+
+    updateVideoHistoryList();
+
+
     function onYouTubeIframeAPIReady() {
         player = new YT.Player('player', {
             height: '360',
@@ -73,20 +104,9 @@
                 'onError': onPlayerError
             }
         });
-        // Load video history from local storage
-        const storedVideoHistory = JSON.parse(localStorage.getItem('videoHistory')) || [];
-        videoHistory = storedVideoHistory.map(video => {
-            if (typeof video === 'string') {
-                return {videoId: video, isHearted: false};
-            } else {
-                return video;
-            }
-        });
-        currentVideoIndex = videoHistory.length - 1;
         if (currentVideoIndex >= 0) {
             player.loadVideoById(videoHistory[currentVideoIndex].videoId);
         }
-        updateVideoHistoryList();
     }
 
     function onPlayerReady(event) {
@@ -195,7 +215,11 @@
             const isSelected = index === currentVideoIndex ? 'selected' : '';
             const heartIcon = video.isHearted ? '❤️' : '🤍';
             const thumbnailUrl = `https://img.youtube.com/vi/${video.videoId}/0.jpg`;
-            return `<li class="${isSelected}"><img src="${thumbnailUrl}" alt="Video thumbnail" style="width: 100px; height: auto;"><a href="#" onclick="currentVideoIndex=${index};player.loadVideoById('${video.videoId}');updateButtons();updateVideoHistoryList();">Video ${index + 1}</a><button onclick="removeVideoFromHistory(${index})">🗑️</button><button onclick="heartVideo(${index})">${heartIcon}</button></li>`;
+            return `<li class="${isSelected}" onclick="currentVideoIndex=${index};player.loadVideoById('${video.videoId}');updateButtons();updateVideoHistoryList();">
+                    <img src="${thumbnailUrl}" alt="Video thumbnail" style="height: 100%; width: 100px; vertical-align: middle;">
+                    <button onclick="removeVideoFromHistory(${index})" style="vertical-align: middle;background-color: transparent;border: 0;font-size: x-large;">🗑️</button>
+                    <button onclick="heartVideo(${index})" style="vertical-align: middle;background-color: transparent;border: 0;font-size: x-large;">${heartIcon}</button>
+                </li>`;
         }).join('');
     }
 </script>
