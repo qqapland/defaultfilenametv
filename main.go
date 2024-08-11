@@ -43,51 +43,42 @@ func randomHandler(w http.ResponseWriter, r *http.Request) {
 
 func searchRandomVideo(query string) (string, error) {
 	apiKey := os.Getenv("YT_API_KEY")
-	baseURL := "https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=50&q=%s&key=%s"
+	baseURL := "https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=4&q=%s&key=%s"
 
-	for attempt := 0; attempt < 3; attempt++ {
-		url := fmt.Sprintf(baseURL, url.QueryEscape(query), apiKey)
+	url := fmt.Sprintf(baseURL, url.QueryEscape(query), apiKey)
 
-		resp, err := http.Get(url)
-		if err != nil {
-			return "", fmt.Errorf("error making request: %v", err)
-		}
-		defer resp.Body.Close()
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", fmt.Errorf("error making request: %v", err)
+	}
+	defer resp.Body.Close()
 
-		var data struct {
-			Items []struct {
-				ID struct {
-					VideoID string `json:"videoId"`
-				} `json:"id"`
-				Snippet struct {
-					Title string `json:"title"`
-				} `json:"snippet"`
-			} `json:"items"`
-		}
+	var data struct {
+		Items []struct {
+			ID struct {
+				VideoID string `json:"videoId"`
+			} `json:"id"`
+			Snippet struct {
+				Title string `json:"title"`
+			} `json:"snippet"`
+		} `json:"items"`
+	}
 
-		if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
-			return "", fmt.Errorf("error decoding response: %v", err)
-		}
+	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+		return "", fmt.Errorf("error decoding response: %v", err)
+	}
 
-		if len(data.Items) == 0 {
-			if attempt == 2 {
-				return "", fmt.Errorf("no videos found after 3 attempts")
-			}
-			continue
-		}
+	if len(data.Items) == 0 {
+		return "", fmt.Errorf("no videos found")
+	}
 
-		for _, item := range data.Items {
-			if item.Snippet.Title == query {
-				return item.ID.VideoID, nil
-			}
-		}
-
-		if attempt == 2 {
-			return "", fmt.Errorf("no video found with exact title match after 3 attempts")
+	for _, item := range data.Items {
+		if item.Snippet.Title == query {
+			return item.ID.VideoID, nil
 		}
 	}
 
-	return "", fmt.Errorf("unexpected error occurred")
+	return "", fmt.Errorf("no video found with exact title match")
 }
 
 func main() {
