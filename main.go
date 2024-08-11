@@ -43,15 +43,23 @@ func randomHandler(w http.ResponseWriter, r *http.Request) {
 
 func searchRandomVideo(query string) (string, error) {
 	apiKey := os.Getenv("YT_API_KEY")
-	baseURL := "https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=4&q=%s&key=%s"
+	baseURL := "https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=50&q=%s&key=%s"
+
+	fmt.Println("query:", query)
 
 	url := fmt.Sprintf(baseURL, url.QueryEscape(query), apiKey)
 
+	fmt.Println("url:", url)
 	resp, err := http.Get(url)
 	if err != nil {
 		return "", fmt.Errorf("error making request: %v", err)
 	}
+
 	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusForbidden {
+		return "", fmt.Errorf("403 quota exceeded")
+	}
 
 	var data struct {
 		Items []struct {
@@ -67,6 +75,8 @@ func searchRandomVideo(query string) (string, error) {
 	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
 		return "", fmt.Errorf("error decoding response: %v", err)
 	}
+
+	fmt.Println("data:", data)
 
 	if len(data.Items) == 0 {
 		return "", fmt.Errorf("no videos found")

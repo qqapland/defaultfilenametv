@@ -33,7 +33,7 @@
     <div id="player"></div><br><br>
     <!-- <div id="videoInfo">loading...</div><br> -->
     <div id="projectInfo"><i>default filename tv </i> finds and plays youtube videos that were uploaded from the camera without edits to the filename.</div><br>
-    <br>
+    <div id="error-text"></div><br>
 <button type="button" onClick="lastVideo()">← previous video</button> 
 <button type="button" onClick="nextVideo()">next video →</button> 
 </center>
@@ -85,7 +85,12 @@
 
     function newVideo() {
         fetch('/random')
-            .then(response => response.json())
+            .then(async response => {
+                if (!response.ok) {
+                    throw new Error(await response.text());
+                }
+                return response.json();
+            })
             .then(data => {
                 if (currentVideoIndex < videoHistory.length - 1) {
                     videoHistory = videoHistory.slice(0, currentVideoIndex + 1);
@@ -97,7 +102,11 @@
                 localStorage.setItem('videoHistory', JSON.stringify(videoHistory));
                 updateButtons();
             })
-            .catch(error => console.error('Error:', error));
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('error-text').innerHTML = 'Error: ' + error.message;
+                document.getElementById('error-text').style.color = 'red';
+            });
     }
 
     function lastVideo() {
