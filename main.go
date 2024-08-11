@@ -77,5 +77,11 @@ func main() {
 	fmt.Println("YT_API_KEY:", os.Getenv("YT_API_KEY"))
 
 	http.HandleFunc("/random", randomHandler)
+
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("Serving index.html")
+		http.ServeFile(w, r, "index.html")
+	})
+	
 	log.Fatal(http.ListenAndServe(":3000", nil))
 }

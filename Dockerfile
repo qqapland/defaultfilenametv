@@ -9,7 +9,7 @@ RUN adduser \
   --uid 65532 \
   small-user
 
-WORKDIR $GOPATH/src/smallest-golang/app/
+WORKDIR /app
 
 COPY . .
 
@@ -26,6 +26,7 @@ COPY --from=base /etc/passwd /etc/passwd
 COPY --from=base /etc/group /etc/group
 
 COPY --from=base /main .
+COPY --from=base /app/index.html .
 
 USER small-user:small-user
 
