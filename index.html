@@ -217,8 +217,8 @@ img {
             const thumbnailUrl = `https://img.youtube.com/vi/${video.videoId}/0.jpg`;
             return `<li class="${isSelected}" onclick="currentVideoIndex=${index};player.loadVideoById('${video.videoId}');updateButtons();updateVideoHistoryList();">
                     <img src="${thumbnailUrl}" alt="Video thumbnail" style="height: 100%; width: 100px; vertical-align: middle;">
-                    <button onclick="removeVideoFromHistory(${index})" style="vertical-align: middle;background-color: transparent;border: 0;font-size: x-large;">🗑️</button>
-                    <button onclick="heartVideo(${index})" style="vertical-align: middle;background-color: transparent;border: 0;font-size: x-large;">${heartIcon}</button>
+                    <button onclick="removeVideoFromHistory(${index}); event.stopPropagation(); return false;" style="vertical-align: middle;background-color: transparent;border: 0;font-size: x-large;">🗑️</button>
+                    <button onclick="heartVideo(${index}); event.stopPropagation(); return false;" style="vertical-align: middle;background-color: transparent;border: 0;font-size: x-large;">${heartIcon}</button>
                 </li>`;
         }).join('');
     }
