@@ -84,14 +84,16 @@
     }
 
     function newVideo() {
-        fetch('/random')
-            .then(async response => {
+        let attempts = 0;
+        const maxAttempts = 4;
+        const fetchVideo = async () => {
+            attempts++;
+            try {
+                const response = await fetch('/random');
                 if (!response.ok) {
                     throw new Error(await response.text());
                 }
-                return response.json();
-            })
-            .then(data => {
+                const data = await response.json();
                 document.getElementById('error-text').innerHTML = '';
                 if (currentVideoIndex < videoHistory.length - 1) {
                     videoHistory = videoHistory.slice(0, currentVideoIndex + 1);
@@ -102,12 +104,17 @@
                 // Save video history to local storage
                 localStorage.setItem('videoHistory', JSON.stringify(videoHistory));
                 updateButtons();
-            })
-            .catch(error => {
+            } catch (error) {
                 console.error('Error:', error);
-                document.getElementById('error-text').innerHTML = 'Error: ' + error.message;
-                document.getElementById('error-text').style.color = 'red';
-            });
+                if (attempts < maxAttempts) {
+                    fetchVideo();
+                } else {
+                    document.getElementById('error-text').innerHTML = 'Error: ' + error.message;
+                    document.getElementById('error-text').style.color = 'red';
+                }
+            }
+        };
+        fetchVideo();
     }
 
     function lastVideo() {
