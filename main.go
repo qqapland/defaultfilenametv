@@ -31,7 +31,7 @@ func randomHandler(w http.ResponseWriter, r *http.Request) {
 
 	randomQuery := randomFirstPart + randomSeparator + numbers
 
-	videoID, err := searchRandomVideo(randomQuery)
+	videoID, err := searchRandomVideoFromInvidious(randomQuery)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -90,6 +90,75 @@ func searchRandomVideo(query string) (string, error) {
 
 	return "", fmt.Errorf("no video found with exact title match")
 }
+
+
+func searchRandomVideoFromInvidious(query string) (string, error) {
+	baseURLs := []string{
+		"https://invidious.jing.rocks/api/v1/search?q=%s",
+		"https://invidious.materialio.us/api/v1/search?q=%s",
+		"https://invidious.darkness.services/api/v1/search?q=%s",
+		"https://inv.tux.pizza/api/v1/search?q=%s",
+	}
+	url := fmt.Sprintf(baseURLs[rand.Intn(len(baseURLs))], url.QueryEscape(query))
+	
+	// url := fmt.Sprintf("%s?q=%s", baseURL, url.QueryEscape(query))
+
+	fmt.Println("url:", url)
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", fmt.Errorf("error making request to Invidious: %v", err)
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("error with response status: %d", resp.StatusCode)
+	}
+
+	var data []struct {
+		Type        string `json:"type"`
+		VideoId     string `json:"videoId,omitempty"`
+		PlaylistId  string `json:"playlistId,omitempty"`
+		Author      string `json:"author,omitempty"`
+		AuthorId    string `json:"authorId,omitempty"`
+		AuthorUrl   string `json:"authorUrl,omitempty"`
+		VideoThumbnails []struct {
+			Quality string `json:"quality"`
+			Url     string `json:"url"`
+			Width   int    `json:"width"`
+			Height  int    `json:"height"`
+		} `json:"videoThumbnails,omitempty"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+		return "", fmt.Errorf("error decoding Invidious response: %v", err)
+	}
+
+	// fmt.Println("data:", data)
+
+	if len(data) == 0 {
+		return "", fmt.Errorf("no videos found on Invidious")
+	}
+
+	if data[0].Type == "video" && data[0].VideoId != "" {
+		return data[0].VideoId, nil
+	}
+
+	// If the first video's title does not match the query, try the next ones
+	for _, item := range data {
+		if item.Type == "video" && item.VideoId != "" {
+			return item.VideoId, nil
+		}
+	}
+
+	return "", fmt.Errorf("no video found with exact title match")
+}
+
+
+
+
+
 
 func main() {
 	fmt.Println("Hello go...")
