@@ -92,6 +92,7 @@
                 return response.json();
             })
             .then(data => {
+                document.getElementById('error-text').innerHTML = '';
                 if (currentVideoIndex < videoHistory.length - 1) {
                     videoHistory = videoHistory.slice(0, currentVideoIndex + 1);
                 }
