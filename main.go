@@ -43,7 +43,7 @@ func randomHandler(w http.ResponseWriter, r *http.Request) {
 
 func searchRandomVideo(query string) (string, error) {
 	apiKey := os.Getenv("YT_API_KEY")
-	baseURL := "https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=50&q=%s&key=%s"
+	baseURL := "https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=4&q=%s&key=%s"
 
 	fmt.Println("query:", query)
 
