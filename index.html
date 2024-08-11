@@ -23,7 +23,7 @@
 </style>
 <body bgcolor="black">
     <div style="display: flex; flex-direction: row;">
-        <div id="video-history" style="width: 20%; padding: 10px; border: 1px solid #ccc; display: none;"></div>
+        <div id="video-history" style="width: 20%; height: 80vh; padding: 10px; border: 1px solid #ccc; display: none; overflow: scroll;"></div>
         <div style="width: 100%;">
             <center>
                 <font face="courier" color="white" size="2">
@@ -119,6 +119,8 @@
                     videoHistory = videoHistory.slice(0, currentVideoIndex + 1);
                 }
                 videoHistory.push({videoId: data.videoId, isHearted: false});
+                // const title = player.getVideoData().title;
+
                 currentVideoIndex = videoHistory.length - 1;
                 player.loadVideoById(data.videoId);
                 // Save video history to local storage
@@ -192,7 +194,8 @@
         videoHistoryList.innerHTML = videoHistory.map((video, index) => {
             const isSelected = index === currentVideoIndex ? 'selected' : '';
             const heartIcon = video.isHearted ? '❤️' : '🤍';
-            return `<li class="${isSelected}"><a href="#" onclick="currentVideoIndex=${index};player.loadVideoById('${video.videoId}');updateButtons();updateVideoHistoryList();">Video ${index + 1}</a><button onclick="removeVideoFromHistory(${index})">Delete</button><button onclick="heartVideo(${index})">${heartIcon}</button></li>`;
+            const thumbnailUrl = `https://img.youtube.com/vi/${video.videoId}/0.jpg`;
+            return `<li class="${isSelected}"><img src="${thumbnailUrl}" alt="Video thumbnail" style="width: 100px; height: auto;"><a href="#" onclick="currentVideoIndex=${index};player.loadVideoById('${video.videoId}');updateButtons();updateVideoHistoryList();">Video ${index + 1}</a><button onclick="removeVideoFromHistory(${index})">🗑️</button><button onclick="heartVideo(${index})">${heartIcon}</button></li>`;
         }).join('');
     }
 </script>
