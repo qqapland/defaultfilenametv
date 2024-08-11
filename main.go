@@ -43,32 +43,51 @@ func randomHandler(w http.ResponseWriter, r *http.Request) {
 
 func searchRandomVideo(query string) (string, error) {
 	apiKey := os.Getenv("YT_API_KEY")
-	url := fmt.Sprintf("https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=50&q=%s&key=%s", url.QueryEscape(query), apiKey)
+	baseURL := "https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=50&q=%s&key=%s"
 
-	resp, err := http.Get(url)
-	if err != nil {
-		return "", fmt.Errorf("error making request: %v", err)
+	for attempt := 0; attempt < 3; attempt++ {
+		url := fmt.Sprintf(baseURL, url.QueryEscape(query), apiKey)
+
+		resp, err := http.Get(url)
+		if err != nil {
+			return "", fmt.Errorf("error making request: %v", err)
+		}
+		defer resp.Body.Close()
+
+		var data struct {
+			Items []struct {
+				ID struct {
+					VideoID string `json:"videoId"`
+				} `json:"id"`
+				Snippet struct {
+					Title string `json:"title"`
+				} `json:"snippet"`
+			} `json:"items"`
+		}
+
+		if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+			return "", fmt.Errorf("error decoding response: %v", err)
+		}
+
+		if len(data.Items) == 0 {
+			if attempt == 2 {
+				return "", fmt.Errorf("no videos found after 3 attempts")
+			}
+			continue
+		}
+
+		for _, item := range data.Items {
+			if item.Snippet.Title == query {
+				return item.ID.VideoID, nil
+			}
+		}
+
+		if attempt == 2 {
+			return "", fmt.Errorf("no video found with exact title match after 3 attempts")
+		}
 	}
-	defer resp.Body.Close()
 
-	var data struct {
-		Items []struct {
-			ID struct {
-				VideoID string `json:"videoId"`
-			} `json:"id"`
-		} `json:"items"`
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
-		return "", fmt.Errorf("error decoding response: %v", err)
-	}
-
-	if len(data.Items) == 0 {
-		return "", fmt.Errorf("no videos found")
-	}
-
-	randomIndex := rand.Intn(len(data.Items))
-	return data.Items[randomIndex].ID.VideoID, nil
+	return "", fmt.Errorf("unexpected error occurred")
 }
 
 func main() {
