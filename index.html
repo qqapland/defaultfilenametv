@@ -52,7 +52,6 @@
     </script>
 </body>
 </html>
-
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
     let player;
@@ -75,10 +74,17 @@
             }
         });
         // Load video history from local storage
-        videoHistory = JSON.parse(localStorage.getItem('videoHistory')) || [];
+        const storedVideoHistory = JSON.parse(localStorage.getItem('videoHistory')) || [];
+        videoHistory = storedVideoHistory.map(video => {
+            if (typeof video === 'string') {
+                return {videoId: video, isHearted: false};
+            } else {
+                return video;
+            }
+        });
         currentVideoIndex = videoHistory.length - 1;
         if (currentVideoIndex >= 0) {
-            player.loadVideoById(videoHistory[currentVideoIndex]);
+            player.loadVideoById(videoHistory[currentVideoIndex].videoId);
         }
         updateVideoHistoryList();
     }
@@ -112,7 +118,7 @@
                 if (currentVideoIndex < videoHistory.length - 1) {
                     videoHistory = videoHistory.slice(0, currentVideoIndex + 1);
                 }
-                videoHistory.push(data.videoId);
+                videoHistory.push({videoId: data.videoId, isHearted: false});
                 currentVideoIndex = videoHistory.length - 1;
                 player.loadVideoById(data.videoId);
                 // Save video history to local storage
@@ -135,7 +141,7 @@
     function lastVideo() {
         if (currentVideoIndex > 0) {
             currentVideoIndex--;
-            player.loadVideoById(videoHistory[currentVideoIndex]);
+            player.loadVideoById(videoHistory[currentVideoIndex].videoId);
             updateButtons();
             updateVideoHistoryList();
         }
@@ -144,7 +150,7 @@
     function nextVideo() {
         if (currentVideoIndex < videoHistory.length - 1) {
             currentVideoIndex++;
-            player.loadVideoById(videoHistory[currentVideoIndex]);
+            player.loadVideoById(videoHistory[currentVideoIndex].videoId);
         } else {
             newVideo();
         }
@@ -170,16 +176,23 @@
         if (currentVideoIndex < 0) {
             currentVideoIndex = 0;
         }
-        player.loadVideoById(videoHistory[currentVideoIndex]);
+        player.loadVideoById(videoHistory[currentVideoIndex].videoId);
         updateButtons();
+        updateVideoHistoryList();
+    }
+    
+    function heartVideo(index) {
+        videoHistory[index].isHearted = !videoHistory[index].isHearted;
+        localStorage.setItem('videoHistory', JSON.stringify(videoHistory));
         updateVideoHistoryList();
     }
     
     function updateVideoHistoryList() {
         const videoHistoryList = document.getElementById('video-history');
-        videoHistoryList.innerHTML = videoHistory.map((videoId, index) => {
+        videoHistoryList.innerHTML = videoHistory.map((video, index) => {
             const isSelected = index === currentVideoIndex ? 'selected' : '';
-            return `<li class="${isSelected}"><a href="#" onclick="currentVideoIndex=${index};player.loadVideoById('${videoId}');updateButtons();updateVideoHistoryList();">Video ${index + 1}</a><button onclick="removeVideoFromHistory(${index})">Delete</button></li>`;
+            const heartIcon = video.isHearted ? '❤️' : '🤍';
+            return `<li class="${isSelected}"><a href="#" onclick="currentVideoIndex=${index};player.loadVideoById('${video.videoId}');updateButtons();updateVideoHistoryList();">Video ${index + 1}</a><button onclick="removeVideoFromHistory(${index})">Delete</button><button onclick="heartVideo(${index})">${heartIcon}</button></li>`;
         }).join('');
     }
 </script>
