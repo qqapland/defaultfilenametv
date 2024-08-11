@@ -9,10 +9,9 @@
 
 <meta property="og:title" content="default filename tv">
 <meta property="og:description" content="A YouTube aggregator that serves only videos without edits to the filename.">
-<meta property="og:url" content="defaultfile.name/">
 <meta name="twitter:card" content="summary">
 
-    <title>default filename tv</title>
+<title>default filename tv</title>
 
 
 <style>
@@ -22,21 +21,35 @@
   height: 40vw;
   }
 </style>
-
-
 <body bgcolor="black">
-<center>
-    <font face="courier" color="white" size="2">
-    <br>
-    <i> default filename tv </i><br><br>
+    <div style="display: flex; flex-direction: row;">
+        <div id="video-history" style="width: 20%; padding: 10px; border: 1px solid #ccc; display: none;"></div>
+        <div style="width: 100%;">
+            <center>
+                <font face="courier" color="white" size="2">
+                <br>
+                <i> default filename tv </i><br><br>
 
-    <div id="player"></div><br><br>
-    <!-- <div id="videoInfo">loading...</div><br> -->
-    <div id="projectInfo"><i>default filename tv </i> finds and plays youtube videos that were uploaded from the camera without edits to the filename.</div><br>
-    <div id="error-text"></div><br>
-<button type="button" onClick="lastVideo()">← previous video</button> 
-<button type="button" onClick="nextVideo()">next video →</button> 
-</center>
+                <div id="player"></div><br><br>
+                <!-- <div id="videoInfo">loading...</div><br> -->
+                <div id="projectInfo"><i>default filename tv </i> finds and plays youtube videos that were uploaded from the camera without edits to the filename.</div><br>
+                <div id="error-text"></div><br>
+                <button type="button" onClick="lastVideo()">← previous video</button> 
+                <button type="button" onClick="nextVideo()">next video →</button> 
+                <button class="collapse-btn" onclick="toggleVideoHistory()">history</button>
+            </center>
+        </div>
+    </div>
+    <script>
+        function toggleVideoHistory() {
+            var videoHistory = document.getElementById("video-history");
+            if (videoHistory.style.display === "none") {
+                videoHistory.style.display = "block";
+            } else {
+                videoHistory.style.display = "none";
+            }
+        }
+    </script>
 </body>
 </html>
 
@@ -67,6 +80,7 @@
         if (currentVideoIndex >= 0) {
             player.loadVideoById(videoHistory[currentVideoIndex]);
         }
+        updateVideoHistoryList();
     }
 
     function onPlayerReady(event) {
@@ -104,6 +118,7 @@
                 // Save video history to local storage
                 localStorage.setItem('videoHistory', JSON.stringify(videoHistory));
                 updateButtons();
+                updateVideoHistoryList();
             } catch (error) {
                 console.error('Error:', error);
                 if (attempts < maxAttempts) {
@@ -122,6 +137,7 @@
             currentVideoIndex--;
             player.loadVideoById(videoHistory[currentVideoIndex]);
             updateButtons();
+            updateVideoHistoryList();
         }
     }
 
@@ -133,6 +149,7 @@
             newVideo();
         }
         updateButtons();
+        updateVideoHistoryList();
     }
 
     function updateButtons() {
@@ -145,4 +162,30 @@
             nextButton.disabled = false;
         }
     }
+
+    function removeVideoFromHistory(index) {
+        videoHistory.splice(index, 1);
+        localStorage.setItem('videoHistory', JSON.stringify(videoHistory));
+        currentVideoIndex -= 1;
+        if (currentVideoIndex < 0) {
+            currentVideoIndex = 0;
+        }
+        player.loadVideoById(videoHistory[currentVideoIndex]);
+        updateButtons();
+        updateVideoHistoryList();
+    }
+    
+    function updateVideoHistoryList() {
+        const videoHistoryList = document.getElementById('video-history');
+        videoHistoryList.innerHTML = videoHistory.map((videoId, index) => {
+            const isSelected = index === currentVideoIndex ? 'selected' : '';
+            return `<li class="${isSelected}"><a href="#" onclick="currentVideoIndex=${index};player.loadVideoById('${videoId}');updateButtons();updateVideoHistoryList();">Video ${index + 1}</a><button onclick="removeVideoFromHistory(${index})">Delete</button></li>`;
+        }).join('');
+    }
 </script>
+
+<style>
+    .selected {
+        background-color: #f0f0f0;
+    }
+</style>
